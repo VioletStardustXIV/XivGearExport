@@ -1,0 +1,12 @@
+{
+  "Author": "Violet Stardust",
+  "Name": "XivGearExport",
+  "Punchline": "A simple utility for exporting your gearset to xivgear.app.",
+  "Description": "A simple utility for exporting your gearset to xivgear.app. Use /xivgearexport to export your current gear set.",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "gear",
+    "xivgear.app",
+    "bis"
+  ]
+}
