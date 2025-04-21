@@ -6,15 +6,8 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Dalamud.Game.Inventory;
 using XivGearExport.Windows;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
-using static FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentMiragePrismPrismSetConvert.AgentData;
 using Lumina.Excel;
 using System;
-using System.Net.Http;
-using Lumina.Excel.Sheets;
-using Serilog;
-using static FFXIVClientStructs.FFXIV.Client.Game.UI.NpcTrade;
-using Item = Lumina.Excel.Sheets.Item;
 
 namespace XivGearExport;
 
@@ -106,7 +99,24 @@ public sealed class Plugin : IDalamudPlugin
 
             // Note: feminine vs masculine here is for grammatical gender, in English it's the same
             var raceName = Races.GetRowAt(race).Feminine.ExtractText();
-            ChatGui.Print(raceName);
+
+            // xivgear uses different race names to what's in Excel.
+            // Correct the different ones.
+            if (raceName == "Keeper of the Moon")
+            {
+                raceName = "Keepers of the Moon";
+            }
+
+            if (raceName == "Seeker of the Sun")
+            {
+                raceName = "Seekers of the Sun";
+            }
+
+            if (raceName == "Helions")
+            {
+                raceName = "Helion";
+            }
+
 
             PlayerInfo playerInfo = new PlayerInfo
             {
