@@ -2,7 +2,8 @@
 {
     internal class PlayerInfo
     {
-        public string job { get; set; }
-        public string race { get; set; }
+        public required string job { get; set; }
+        public required string race { get; set; }
+        public int level { get; set; }
     }
 }

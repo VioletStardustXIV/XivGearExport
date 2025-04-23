@@ -1,18 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Net.Http;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Web;
-using Dalamud.IoC;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
-using Serilog;
 
 namespace XivGearExport
 {
@@ -48,7 +40,7 @@ namespace XivGearExport
                 description = "Exported from the XivGearExporter plugin.",
                 sets = [set],
                 job = playerInfo.job,
-                level = 100,
+                level = playerInfo.level,
                 partyBonus = 5,
                 race = playerInfo.race,
             };

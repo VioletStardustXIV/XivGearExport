@@ -15,25 +15,25 @@ namespace XivGearExport
     internal class Item
     {
         public uint id { get; set; }
-        public IList<Materia> materia { get; set; }
+        public IList<Materia>? materia { get; set; }
     }
 
     internal class XivGearItems
     {
         public static readonly uint ItemIdHqOffset = 1_000_000;
 
-        public Item Weapon { get; set; }
-        public Item OffHand { get; set; }
-        public Item Head { get; set; }
-        public Item Body { get; set; }
-        public Item Hand { get; set; }
-        public Item Legs { get; set; }
-        public Item Feet { get; set; }
-        public Item Ears { get; set; }
-        public Item Neck { get; set; }
-        public Item Wrist { get; set; }
-        public Item RingLeft { get; set; }
-        public Item RingRight { get; set; }
+        public Item? Weapon { get; set; }
+        public Item? OffHand { get; set; }
+        public Item? Head { get; set; }
+        public Item? Body { get; set; }
+        public Item? Hand { get; set; }
+        public Item? Legs { get; set; }
+        public Item? Feet { get; set; }
+        public Item? Ears { get; set; }
+        public Item? Neck { get; set; }
+        public Item? Wrist { get; set; }
+        public Item? RingLeft { get; set; }
+        public Item? RingRight { get; set; }
 
 
         private static uint GetMateriaItemId(ushort materiaId, byte materiaGrade, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet)
@@ -75,7 +75,7 @@ namespace XivGearExport
                         materiaList.Add(materiaItemId);
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     // We can just ignore this. No use handling weird materia.
                 }
@@ -230,7 +230,7 @@ namespace XivGearExport
 
     internal class XivGearSet
     {
-        public string name { get; set; }
-        public XivGearItems items { get; set; }
+        public required string name { get; set; }
+        public required XivGearItems items { get; set; }
     }
 }

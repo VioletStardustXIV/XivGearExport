@@ -1,7 +1,6 @@
 using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using Dalamud.Game.Inventory;
@@ -32,6 +31,7 @@ public sealed class Plugin : IDalamudPlugin
     private ExcelSheet<Lumina.Excel.Sheets.Materia> Materia { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.ClassJob> ClassJobs { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.Tribe> Races { get; init; }
+    private ExcelSheet<Lumina.Excel.Sheets.ClassJobCategory> ClassJobCategories { get; init; }
     private XivGearExport.Exporter Exporter { get; set; }
 
     public Plugin()
@@ -41,10 +41,8 @@ public sealed class Plugin : IDalamudPlugin
 
         Materia = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.Materia>() ?? throw new InvalidOperationException("Materia sheet not found");
         ClassJobs = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.ClassJob>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("ClassJobs sheet not found");
+        ClassJobCategories = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.ClassJobCategory>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("ClassJobCategory sheet not found");
         Races = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.Tribe>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("Tribes sheet not found");
-
-        // you might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
 
         ConfigWindow = new ConfigWindow(this);
 
@@ -86,13 +84,36 @@ public sealed class Plugin : IDalamudPlugin
         ToggleConfigUI();
     }
 
+    private bool HasSoulCrystalEquipped(ReadOnlySpan<GameInventoryItem> items)
+    {
+        foreach (GameInventoryItem item in items)
+        {
+            if (item.InventorySlot == 13 &&  item.ItemId != 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void OnExportCommand(string command, string args)
     {
         var player = ClientState.LocalPlayer;
         if (player != null)
         {
+            var equippedItems = GameInventory.GetInventoryItems(GameInventoryType.EquippedItems);
+            var isJob = HasSoulCrystalEquipped(equippedItems);
+
+            if (!isJob)
+            {
+                ChatGui.PrintError("Cannot create xivgear.app set for non-job or non-combat job.");
+                return;
+            }
+
             var jobRow = player.ClassJob.RowId;
-            var jobAbbreviation = ClassJobs.GetRow(jobRow).Abbreviation.ExtractText();
+            var job = ClassJobs.GetRow(jobRow);
+
+            var jobAbbreviation = job.Abbreviation.ExtractText();
 
             var playerCustomizeInfo = player.Customize;
             var race = playerCustomizeInfo[(int)Dalamud.Game.ClientState.Objects.Enums.CustomizeIndex.Tribe];
@@ -122,9 +143,15 @@ public sealed class Plugin : IDalamudPlugin
             {
                 job = jobAbbreviation,
                 race = raceName,
+                level = 100,
             };
 
-            var items = XivGearItems.CreateItemsFromGameInventoryItems(GameInventory.GetInventoryItems(GameInventoryType.EquippedItems), Materia);
+            if (jobAbbreviation == "BLU")
+            {
+                playerInfo.level = 80;
+            }
+
+            var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia);
 
             try
             {
