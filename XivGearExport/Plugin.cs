@@ -37,8 +37,7 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin()
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-
-
+        
         Materia = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.Materia>() ?? throw new InvalidOperationException("Materia sheet not found");
         ClassJobs = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.ClassJob>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("ClassJobs sheet not found");
         ClassJobCategories = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.ClassJobCategory>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("ClassJobCategory sheet not found");
@@ -86,7 +85,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private static bool HasSoulCrystalEquipped(ReadOnlySpan<GameInventoryItem> items)
     {
-        foreach (GameInventoryItem item in items)
+        foreach (var item in items)
         {
             if (item.InventorySlot == 13 &&  item.ItemId != 0)
             {
