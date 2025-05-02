@@ -32,7 +32,7 @@ public sealed class Plugin : IDalamudPlugin
     private ExcelSheet<Lumina.Excel.Sheets.ClassJob> ClassJobs { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.Tribe> Races { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.ClassJobCategory> ClassJobCategories { get; init; }
-    private XivGearExport.Exporter Exporter { get; set; }
+    private Exporter Exporter { get; set; }
 
     public Plugin()
     {
@@ -50,7 +50,7 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.AddHandler(ConfigCommandName, new CommandInfo(OnConfigCommand)
         {
-            HelpMessage = "Type /xivgearexportconfig to fiddle with the config."
+            HelpMessage = "Type /xivgearexportconfig to change the config."
         });
 
 
@@ -67,7 +67,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleConfigUI;
 
         var client = new System.Net.Http.HttpClient();
-        Exporter = new XivGearExport.Exporter(client, Log, ChatGui);
+        Exporter = new Exporter(client, Log, ChatGui);
     }
 
     public void Dispose()
@@ -84,7 +84,7 @@ public sealed class Plugin : IDalamudPlugin
         ToggleConfigUI();
     }
 
-    private bool HasSoulCrystalEquipped(ReadOnlySpan<GameInventoryItem> items)
+    private static bool HasSoulCrystalEquipped(ReadOnlySpan<GameInventoryItem> items)
     {
         foreach (GameInventoryItem item in items)
         {
@@ -99,68 +99,54 @@ public sealed class Plugin : IDalamudPlugin
     private void OnExportCommand(string command, string args)
     {
         var player = ClientState.LocalPlayer;
-        if (player != null)
+        if (player == null)
         {
-            var equippedItems = GameInventory.GetInventoryItems(GameInventoryType.EquippedItems);
-            var isJob = HasSoulCrystalEquipped(equippedItems);
+            return;
+        }
+        var equippedItems = GameInventory.GetInventoryItems(GameInventoryType.EquippedItems);
+        var isJob = HasSoulCrystalEquipped(equippedItems);
 
-            if (!isJob)
-            {
-                ChatGui.PrintError("Cannot create xivgear.app set for non-job or non-combat job.");
-                return;
-            }
+        if (!isJob)
+        {
+            ChatGui.PrintError("Cannot create xivgear.app set for non-job or non-combat job.");
+            return;
+        }
 
-            var jobRow = player.ClassJob.RowId;
-            var job = ClassJobs.GetRow(jobRow);
+        var jobRow = player.ClassJob.RowId;
+        var job = ClassJobs.GetRow(jobRow);
 
-            var jobAbbreviation = job.Abbreviation.ExtractText();
+        var jobAbbreviation = job.Abbreviation.ExtractText();
 
-            var playerCustomizeInfo = player.Customize;
-            var race = playerCustomizeInfo[(int)Dalamud.Game.ClientState.Objects.Enums.CustomizeIndex.Tribe];
+        var playerCustomizeInfo = player.Customize;
+        var race = playerCustomizeInfo[(int)Dalamud.Game.ClientState.Objects.Enums.CustomizeIndex.Tribe];
 
-            // Note: feminine vs masculine here is for grammatical gender, in English it's the same
-            var raceName = Races.GetRowAt(race).Feminine.ExtractText();
+        // Note: feminine vs masculine here is for grammatical gender, in English it's the same
+        var raceName = Races.GetRowAt(race).Feminine.ExtractText();
+        raceName = XivGearSheet.ConvertRaceNameToXivGearRaceName(raceName);
 
-            // xivgear uses different race names to what's in Excel.
-            // Correct the different ones.
-            if (raceName == "Keeper of the Moon")
-            {
-                raceName = "Keepers of the Moon";
-            }
+        var playerInfo = new PlayerInfo
+        {
+            Job = jobAbbreviation,
+            Race = raceName,
+            Level = 100,
+            PartyBonus = 5,
+        };
 
-            if (raceName == "Seeker of the Sun")
-            {
-                raceName = "Seekers of the Sun";
-            }
+        if (jobAbbreviation == "BLU")
+        {
+            playerInfo.Level = 80;
+            playerInfo.PartyBonus = 1;
+        }
 
-            if (raceName == "Helions")
-            {
-                raceName = "Helion";
-            }
+        var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia);
 
-
-            PlayerInfo playerInfo = new PlayerInfo
-            {
-                job = jobAbbreviation,
-                race = raceName,
-                level = 100,
-            };
-
-            if (jobAbbreviation == "BLU")
-            {
-                playerInfo.level = 80;
-            }
-
-            var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia);
-
-            try
-            {
-                Exporter.Export(items, playerInfo, Configuration);
-            }
-            catch (XivExportException ex)
-            {
-                ChatGui.PrintError("An error happened when trying to export this gear:\n" + ex.Message);
-            }
+        try
+        {
+            Exporter.Export(items, playerInfo, Configuration);
+        }
+        catch (XivExportException ex)
+        {
+            ChatGui.PrintError("An error happened when trying to export this gear:\n" + ex.Message);
         }
     }
 

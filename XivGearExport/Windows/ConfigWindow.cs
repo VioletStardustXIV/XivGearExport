@@ -43,17 +43,17 @@ public class ConfigWindow : Window, IDisposable
             Configuration.Save();
         }
 
-        var openConfig = Configuration.OpenURLInBrowserAutomatically;
+        var openConfig = Configuration.OpenUrlInBrowserAutomatically;
         if (ImGui.Checkbox("Open URL Automatically", ref openConfig))
         {
-            Configuration.OpenURLInBrowserAutomatically = openConfig;
+            Configuration.OpenUrlInBrowserAutomatically = openConfig;
             Configuration.Save();
         }
 
-        var printConfig = Configuration.PrintURLToChat;
+        var printConfig = Configuration.PrintUrlToChat;
         if (ImGui.Checkbox("Print URL to Chat", ref printConfig))
         {
-            Configuration.PrintURLToChat = printConfig;
+            Configuration.PrintUrlToChat = printConfig;
             Configuration.Save();
         }
     }

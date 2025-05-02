@@ -10,8 +10,8 @@ public class Configuration : IPluginConfiguration
 
     public bool ExportSetInEditMode { get; set; } = true;
     public bool ExportSetInReadOnlyMode { get; set; } = false;
-    public bool OpenURLInBrowserAutomatically { get; set; } = true;
-    public bool PrintURLToChat { get; set; } = false;
+    public bool OpenUrlInBrowserAutomatically { get; set; } = true;
+    public bool PrintUrlToChat { get; set; } = false;
 
     public void Save()
     {

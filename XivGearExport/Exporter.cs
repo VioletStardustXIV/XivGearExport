@@ -9,57 +9,43 @@ using Dalamud.Utility;
 namespace XivGearExport
 {
 
-    internal class Exporter
+    internal class Exporter(HttpClient httpClient, IPluginLog log, IChatGui chatGui)
     {
-        private static readonly string XivgearApiBase = "https://api.xivgear.app/shortlink/";
-        private static readonly string XivGearImportSetPrefix = "https://xivgear.app/?page=importset%7C";
-        private static readonly string XivGearReadOnlySetPrefix = "https://xivgear.app/?page=sl%7C";
-
-        private readonly HttpClient httpClient;
-        private readonly IPluginLog log;
-        private readonly IChatGui chatGui;
-
-        public Exporter(HttpClient httpClient, IPluginLog log, IChatGui chatGui)
-        {
-            this.httpClient = httpClient;
-            this.log = log;
-            this.chatGui = chatGui;
-        }
+        private const string XivgearApiBase = "https://api.xivgear.app/shortlink/";
+        private const string XivGearImportSetPrefix = "https://xivgear.app/?page=importset%7C";
+        private const string XivGearReadOnlySetPrefix = "https://xivgear.app/?page=sl%7C";
 
         public void Export(XivGearItems items, PlayerInfo playerInfo, Configuration config)
         {
-            XivGearSet set = new XivGearSet
+            var set = new XivGearSet
             {
-                items = items,
-                name = "Exported Set",
+                Items = items,
+                Name = "Exported Set",
             };
 
-            XivGearSheet sheet = new XivGearSheet
+            var sheet = new XivGearSheet
             {
-                name = "Exported Sheet",
-                description = "Exported from the XivGearExporter plugin.",
-                sets = [set],
-                job = playerInfo.job,
-                level = playerInfo.level,
-                partyBonus = 5,
-                race = playerInfo.race,
+                Name = "Exported Sheet",
+                Description = "Exported from the XivGearExporter plugin.",
+                Sets = [set],
+                Job = playerInfo.Job,
+                Level = playerInfo.Level,
+                PartyBonus = playerInfo.PartyBonus,
+                Race = playerInfo.Race,
             };
 
-            if(config != null)
+            if (config.ExportSetInEditMode)
             {
-                if (config.ExportSetInEditMode)
-                {
-                    ExportToXivGearEditMode(sheet, config.OpenURLInBrowserAutomatically, config.PrintURLToChat);
-                }
+                ExportToXivGearEditMode(sheet, config.OpenUrlInBrowserAutomatically, config.PrintUrlToChat);
+            }
 
-                if (config.ExportSetInReadOnlyMode)
-                {
-                    ExportToXivGearReadOnlyMode(sheet, config.OpenURLInBrowserAutomatically, config.PrintURLToChat);
-                }
+            if (config.ExportSetInReadOnlyMode)
+            {
+                ExportToXivGearReadOnlyMode(sheet, config.OpenUrlInBrowserAutomatically, config.PrintUrlToChat);
             }
         }
 
-        public async void ExportToXivGearReadOnlyMode(XivGearSheet sheet, bool openLink, bool printUrl)
+        private async void ExportToXivGearReadOnlyMode(XivGearSheet sheet, bool openLink, bool printUrl)
         {
             try
             {
@@ -87,17 +73,13 @@ namespace XivGearExport
                     chatGui.Print(urlToOpen);
                 }
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex) when (ex is JsonException or ArgumentException or InvalidOperationException or HttpRequestException)
             {
-                throw new XivExportException(ex.Message);
-            }
-            catch (Exception ex) when (ex is JsonException || ex is ArgumentException || ex is InvalidOperationException)
-            {
-                throw new XivExportException(ex.Message);
+                chatGui.PrintError("Something went wrong when exporting the set:\n" + ex.Message);
             }
         }
 
-        public void ExportToXivGearEditMode(XivGearSheet sheet, bool openLink, bool printUrl)
+        private void ExportToXivGearEditMode(XivGearSheet sheet, bool openLink, bool printUrl)
         {
             try
             {

@@ -2,8 +2,10 @@
 {
     internal class PlayerInfo
     {
-        public required string job { get; set; }
-        public required string race { get; set; }
-        public int level { get; set; }
+        public required string Job { get; set; }
+        public required string Race { get; set; }
+        public int Level { get; set; } = 100;
+        
+        public int PartyBonus { get; set; } = 5;
     }
 }

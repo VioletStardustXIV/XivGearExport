@@ -3,36 +3,65 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.Inventory;
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 using Lumina.Excel;
+using Newtonsoft.Json;
 
 namespace XivGearExport
 {
     internal class Materia
     {
+        [JsonProperty("id")]
         public int id { get; set; }
     }
 
     internal class Item
     {
-        public uint id { get; set; }
-        public IList<Materia>? materia { get; set; }
+        [JsonProperty("id")]
+        public uint Id { get; set; }
+        
+        [JsonProperty("materia")]
+        public IList<Materia>? Materia { get; set; }
     }
 
     internal class XivGearItems
     {
-        public static readonly uint ItemIdHqOffset = 1_000_000;
+        private const uint ItemIdHqOffset = 1_000_000;
 
+        [JsonProperty("Weapon")]
         public Item? Weapon { get; set; }
+        
+        [JsonProperty("OffHand")]
         public Item? OffHand { get; set; }
+        
+        [JsonProperty("Head")]
         public Item? Head { get; set; }
+        
+        [JsonProperty("Body")]
         public Item? Body { get; set; }
+        
+        [JsonProperty("Hand")]
         public Item? Hand { get; set; }
+        
+        [JsonProperty("Legs")]
         public Item? Legs { get; set; }
+        
+        [JsonProperty("Feet")]
         public Item? Feet { get; set; }
+        
+        [JsonProperty("Ears")]
         public Item? Ears { get; set; }
+        
+        [JsonProperty("Neck")]
         public Item? Neck { get; set; }
+        
+        [JsonProperty("Wrist")]
         public Item? Wrist { get; set; }
+        
+        [JsonProperty("RingLeft")]
         public Item? RingLeft { get; set; }
+        
+        [JsonProperty("RingRight")]
         public Item? RingRight { get; set; }
 
 
@@ -84,15 +113,12 @@ namespace XivGearExport
             return materiaList;
         }
 
-        public static IList<Materia> MapMateriaFromGameMateria(List<uint> materia)
+        private static IList<Materia> MapMateriaFromGameMateria(List<uint> materia)
         {
-            return materia.Select(m =>
-             {
-                 return new Materia
-                 {
-                     id = (int)m
-                 };
-             }).ToImmutableList();
+            return materia.Select(m => new Materia
+            {
+                id = (int)m
+            }).ToImmutableList();
         }
 
         public static XivGearItems CreateItemsFromGameInventoryItems(ReadOnlySpan<GameInventoryItem> gameInventoryItems, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet)
@@ -117,8 +143,8 @@ namespace XivGearExport
                 {
                     items.Weapon = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -126,8 +152,8 @@ namespace XivGearExport
                 {
                     items.OffHand = new Item
                     {
-                        id = itemId,
-                        materia = []
+                        Id = itemId,
+                        Materia = []
                     };
                 }
 
@@ -135,8 +161,8 @@ namespace XivGearExport
                 {
                     items.Head = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -144,8 +170,8 @@ namespace XivGearExport
                 {
                     items.Body = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -153,8 +179,8 @@ namespace XivGearExport
                 {
                     items.Hand = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -162,8 +188,8 @@ namespace XivGearExport
                 {
                     items.Legs = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -171,8 +197,8 @@ namespace XivGearExport
                 {
                     items.Feet = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -180,8 +206,8 @@ namespace XivGearExport
                 {
                     items.Ears = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -189,8 +215,8 @@ namespace XivGearExport
                 {
                     items.Neck = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -198,8 +224,8 @@ namespace XivGearExport
                 {
                     items.Wrist = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -207,8 +233,8 @@ namespace XivGearExport
                 {
                     items.RingLeft = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
 
@@ -216,8 +242,8 @@ namespace XivGearExport
                 {
                     items.RingRight = new Item
                     {
-                        id = itemId,
-                        materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        Id = itemId,
+                        Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
                     };
                 }
             }
@@ -230,7 +256,10 @@ namespace XivGearExport
 
     internal class XivGearSet
     {
-        public required string name { get; set; }
-        public required XivGearItems items { get; set; }
+        [JsonProperty("name")]
+        public required string Name { get; set; }
+        
+        [JsonProperty("items")]
+        public required XivGearItems Items { get; set; }
     }
 }
