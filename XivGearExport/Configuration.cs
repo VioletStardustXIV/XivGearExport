@@ -12,6 +12,7 @@ public class Configuration : IPluginConfiguration
     public bool ExportSetInReadOnlyMode { get; set; } = false;
     public bool OpenUrlInBrowserAutomatically { get; set; } = true;
     public bool PrintUrlToChat { get; set; } = false;
+    public bool EnableGearsetMenuItem { get; set; } = true;
 
     public void Save()
     {

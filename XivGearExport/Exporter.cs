@@ -8,8 +8,7 @@ using Dalamud.Utility;
 
 namespace XivGearExport
 {
-
-    internal class Exporter(HttpClient httpClient, IPluginLog log, IChatGui chatGui)
+    public class Exporter(HttpClient httpClient, IPluginLog log, IChatGui chatGui)
     {
         private const string XivgearApiBase = "https://api.xivgear.app/shortlink/";
         private const string XivGearImportSetPrefix = "https://xivgear.app/?page=importset%7C";

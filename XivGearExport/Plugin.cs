@@ -19,9 +19,12 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static IGameInventory GameInventory { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
+    [PluginService] internal static IContextMenu ContextMenu { get; private set; } = null!;
 
     private const string ConfigCommandName = "/xivgearexportconfig";
+    private const string ConfigShortCommandName = "/xgeconfig";
     private const string ExportCommandName = "/xivgearexport";
+    private const string ExportShortCommandName = "/xge";
 
     public Configuration Configuration { get; init; }
 
@@ -33,6 +36,8 @@ public sealed class Plugin : IDalamudPlugin
     private ExcelSheet<Lumina.Excel.Sheets.Tribe> Races { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.ClassJobCategory> ClassJobCategories { get; init; }
     private Exporter Exporter { get; set; }
+    
+    private ContextMenuHandler ContextMenuHandler { get; set; }
 
     public Plugin()
     {
@@ -49,13 +54,22 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.AddHandler(ConfigCommandName, new CommandInfo(OnConfigCommand)
         {
-            HelpMessage = "Type /xivgearexportconfig to change the config."
+            HelpMessage = "Type /xivgearexportconfig or /xgeconfig to change the config."
         });
-
-
+        
+        CommandManager.AddHandler(ConfigShortCommandName, new CommandInfo(OnConfigCommand)
+        {
+            ShowInHelp = false
+        });
+        
         CommandManager.AddHandler(ExportCommandName, new CommandInfo(OnExportCommand)
         {
-            HelpMessage = "Type /xivgearexport to export your gearset to xivgear.app."
+            HelpMessage = "Type /xivgearexport or /xge to export your gearset to xivgear.app."
+        });
+        
+        CommandManager.AddHandler(ExportShortCommandName, new CommandInfo(OnExportCommand)
+        {
+            ShowInHelp = false
         });
 
         PluginInterface.UiBuilder.Draw += DrawUI;
@@ -67,12 +81,15 @@ public sealed class Plugin : IDalamudPlugin
 
         var client = new System.Net.Http.HttpClient();
         Exporter = new Exporter(client, Log, ChatGui);
+
+        ContextMenuHandler = new ContextMenuHandler(PluginInterface, ChatGui, ContextMenu, Configuration, ClientState, Exporter, Races, Materia, ClassJobs);
     }
 
     public void Dispose()
     {
         WindowSystem.RemoveAllWindows();
 
+        ContextMenuHandler.Dispose();
         ConfigWindow.Dispose();
 
         CommandManager.RemoveHandler(ConfigCommandName);
@@ -100,6 +117,7 @@ public sealed class Plugin : IDalamudPlugin
         var player = ClientState.LocalPlayer;
         if (player == null)
         {
+            ChatGui.PrintError("Something went wrong when creating xivgear.app set (player was null).");
             return;
         }
         var equippedItems = GameInventory.GetInventoryItems(GameInventoryType.EquippedItems);

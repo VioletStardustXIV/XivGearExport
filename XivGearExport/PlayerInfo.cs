@@ -1,6 +1,6 @@
 ﻿namespace XivGearExport
 {
-    internal class PlayerInfo
+    public class PlayerInfo
     {
         public required string Job { get; set; }
         public required string Race { get; set; }

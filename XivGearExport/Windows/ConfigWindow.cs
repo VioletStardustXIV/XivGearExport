@@ -17,7 +17,7 @@ public class ConfigWindow : Window, IDisposable
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
 
-        Size = new Vector2(232, 180);
+        Size = new Vector2(250, 176);
         SizeCondition = ImGuiCond.Always;
 
         Configuration = plugin.Configuration;
@@ -54,6 +54,13 @@ public class ConfigWindow : Window, IDisposable
         if (ImGui.Checkbox("Print URL to Chat", ref printConfig))
         {
             Configuration.PrintUrlToChat = printConfig;
+            Configuration.Save();
+        }
+        
+        var gearsetListMenuItem = Configuration.EnableGearsetMenuItem;
+        if (ImGui.Checkbox("Enable Gearset List Menu Item", ref gearsetListMenuItem))
+        {
+            Configuration.EnableGearsetMenuItem = gearsetListMenuItem;
             Configuration.Save();
         }
     }

@@ -4,18 +4,19 @@ using System.Linq;
 using Dalamud.Game.Inventory;
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel;
 using Newtonsoft.Json;
 
 namespace XivGearExport
 {
-    internal class Materia
+    public class Materia
     {
         [JsonProperty("id")]
         public int id { get; set; }
     }
 
-    internal class Item
+    public class Item
     {
         [JsonProperty("id")]
         public uint Id { get; set; }
@@ -24,7 +25,7 @@ namespace XivGearExport
         public IList<Materia>? Materia { get; set; }
     }
 
-    internal class XivGearItems
+    public class XivGearItems
     {
         private const uint ItemIdHqOffset = 1_000_000;
 
@@ -78,7 +79,7 @@ namespace XivGearExport
             return materiaItem.RowId;
         }
 
-        public static List<uint> GetItemMateriaIds(GameInventoryItem item, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet)
+        private static List<uint> GetItemMateriaIds(GameInventoryItem item, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet)
         {
             // returns a list of materia ids that are melded to item
             var materiaList = new List<uint>();
@@ -112,6 +113,41 @@ namespace XivGearExport
 
             return materiaList;
         }
+        
+        private static List<uint> GetGearsetItemMateriaIds(RaptureGearsetModule.GearsetItem item, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet)
+        {
+            // returns a list of materia ids that are melded to item
+            var materiaList = new List<uint>();
+
+            // iterate over materia slots
+            for (var i = 0; i < item.Materia.Length; i++)
+            {
+                var materiaId = item.Materia[i];
+                var materiaGrade = item.MateriaGrades[i];
+
+                // no materia in this slot, assume all after are empty
+                if (materiaId == 0)
+                {
+                    break;
+                }
+
+                // add item id of materia to list
+                try
+                {
+                    var materiaItemId = GetMateriaItemId(materiaId, materiaGrade, materiaSheet);
+                    if (materiaItemId != 0)
+                    {
+                        materiaList.Add(materiaItemId);
+                    }
+                }
+                catch (Exception)
+                {
+                    // We can just ignore this. No use handling weird materia.
+                }
+            }
+
+            return materiaList;
+        }
 
         private static IList<Materia> MapMateriaFromGameMateria(List<uint> materia)
         {
@@ -121,23 +157,29 @@ namespace XivGearExport
             }).ToImmutableList();
         }
 
+        // HQ Items have a weirdly high item offset that xivgear.app doesn't use.
+        private static uint ApplyHqOffset(uint itemId)
+        {
+            if (itemId > ItemIdHqOffset)
+            {
+                itemId -= ItemIdHqOffset; 
+            }
+
+            return itemId;
+        }
+
         public static XivGearItems CreateItemsFromGameInventoryItems(ReadOnlySpan<GameInventoryItem> gameInventoryItems, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet)
         {
             var items = new XivGearItems();
 
             foreach (var item in gameInventoryItems)
             {
-
                 if (item.ItemId == 0)
                 {
                     continue;
                 }
 
-                var itemId = item.ItemId;
-                if (itemId > ItemIdHqOffset)
-                {
-                    itemId -= ItemIdHqOffset; 
-                }
+                var itemId = ApplyHqOffset(item.ItemId);
 
                 if (item.InventorySlot == 0)
                 {
@@ -249,8 +291,98 @@ namespace XivGearExport
             }
 
             return items;
-
-
+        }
+        
+        public static unsafe XivGearItems CreateItemsFromGearset(RaptureGearsetModule.GearsetEntry* gearset, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet)
+        {
+            var items = new XivGearItems();
+            
+            var mainHand = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.MainHand);
+            items.Weapon = new Item
+            {
+                Id = ApplyHqOffset(mainHand.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(mainHand, materiaSheet)),
+            };
+            
+            var offHand = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.OffHand);
+            items.OffHand = new Item
+            {
+                Id = ApplyHqOffset(offHand.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(offHand, materiaSheet)),
+            };
+            
+            var head = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Head);
+            items.Head = new Item
+            {
+                Id = ApplyHqOffset(head.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(head, materiaSheet)),
+            };
+            
+            var body = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Body);
+            items.Body = new Item
+            {
+                Id = ApplyHqOffset(body.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(body, materiaSheet)),
+            };
+            
+            var hands = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Hands);
+            items.Hand = new Item
+            {
+                Id = ApplyHqOffset(hands.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(hands, materiaSheet)),
+            };
+            
+            var legs = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Legs);
+            items.Legs = new Item
+            {
+                Id = ApplyHqOffset(legs.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(legs, materiaSheet)),
+            };
+            
+            var feet = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Feet);
+            items.Feet = new Item
+            {
+                Id = ApplyHqOffset(feet.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(feet, materiaSheet)),
+            };
+            
+            var ears = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Ears);
+            items.Ears = new Item
+            {
+                Id = ApplyHqOffset(ears.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(ears, materiaSheet)),
+            };
+            
+            var neck = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Neck);
+            items.Neck = new Item
+            {
+                Id = ApplyHqOffset(neck.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(neck, materiaSheet)),
+            };
+            
+            var wrists = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Wrists);
+            items.Wrist = new Item
+            {
+                Id = ApplyHqOffset(wrists.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(wrists, materiaSheet)),
+            };
+            
+            var ringRight = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.RingRight);
+            items.RingRight = new Item
+            {
+                Id = ApplyHqOffset(ringRight.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(ringRight, materiaSheet)),
+            };
+            
+            var ringLeft = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.RingLeft);
+            
+            items.RingLeft = new Item
+            {
+                Id = ApplyHqOffset(ringLeft.ItemId),
+                Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(ringLeft, materiaSheet)),
+            };
+            
+            return items;
         }
     }
 
