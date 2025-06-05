@@ -23,8 +23,8 @@ public class ContextMenuHandler
 
 
     public ContextMenuHandler(IDalamudPluginInterface pluginInterface, IChatGui chatGui, IContextMenu contextMenu, Configuration configuration, 
-        IClientState clientState, Exporter exporter, ExcelSheet<Lumina.Excel.Sheets.Tribe> Races, ExcelSheet<Lumina.Excel.Sheets.Materia> Materia,
-        ExcelSheet<Lumina.Excel.Sheets.ClassJob> ClassJobs)
+        IClientState clientState, Exporter exporter, ExcelSheet<Lumina.Excel.Sheets.Tribe> races, ExcelSheet<Lumina.Excel.Sheets.Materia> materia,
+        ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobs)
     {
         this.pluginInterface = pluginInterface;
         this.chatGui = chatGui;
@@ -32,9 +32,9 @@ public class ContextMenuHandler
         this.configuration = configuration;
         this.clientState = clientState;
         this.exporter = exporter;
-        this.Races = Races;
-        this.Materia = Materia;
-        this.ClassJobs = ClassJobs;
+        this.Races = races;
+        this.Materia = materia;
+        this.ClassJobs = classJobs;
 
         this.contextMenu.OnMenuOpened += OnOpenContextMenu;
     }
@@ -54,19 +54,6 @@ public class ContextMenuHandler
         });
     }
 
-    private string SoulstoneIdToJobAbbreviation(uint soulstoneId)
-    {
-        foreach (var classJob in ClassJobs)
-        {
-            if (classJob.ItemSoulCrystal.RowId == soulstoneId)
-            {
-                return classJob.Abbreviation.ExtractText();
-            }
-        }
-
-        return "";
-    }
-
     private unsafe void ExportGearSet (IMenuItemClickedArgs args)
     {
         if (args.Target is not MenuTargetDefault)
@@ -82,50 +69,22 @@ public class ContextMenuHandler
         
         var pointer = (AgentGearSet*)args.AgentPtr;
         var gearset = pointer->UIModuleInterface->GetRaptureGearsetModule()->GetGearset((int)gearSetId);
-        var soulstone = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.SoulStone);
-        if (soulstone.ItemId == 0)
+        var soulStone = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.SoulStone);
+        if (soulStone.ItemId == 0)
         {
             chatGui.PrintError("Cannot create xivgear.app set for non-job or non-combat job.");
             return;
         }
         
-        var player = clientState.LocalPlayer;
-        if (player == null)
-        {
-            chatGui.PrintError("Something went wrong when creating xivgear.app set (player was null).");
-            return;
-        }
-        var playerCustomizeInfo = player.Customize;
-        var race = playerCustomizeInfo[(int)Dalamud.Game.ClientState.Objects.Enums.CustomizeIndex.Tribe];
-
-        // Note: feminine vs masculine here is for grammatical gender, in English it's the same
-        var raceName = Races.GetRowAt(race).Feminine.ExtractText();
-        raceName = XivGearSheet.ConvertRaceNameToXivGearRaceName(raceName);
-        
-        var jobAbbreviation = SoulstoneIdToJobAbbreviation(soulstone.ItemId);
-        var playerInfo = new PlayerInfo
-        {
-            Job = jobAbbreviation,
-            Race = raceName,
-            Level = 100,
-            PartyBonus = 5,
-        };
-
-        if (jobAbbreviation == "BLU")
-        {
-            playerInfo.Level = 80;
-            playerInfo.PartyBonus = 1;
-        }
-        
-        var gearItems = XivGearItems.CreateItemsFromGearset(gearset, Materia);
-        
         try
         {
-            exporter.Export(gearItems, playerInfo, configuration);
+            var playerInfo = PlayerInfo.GetPlayerInfo(clientState, ClassJobs, Races);
+            var gearItems = XivGearItems.CreateItemsFromGearset(gearset, Materia);
+            exporter.Export(gearItems, playerInfo, configuration, gearset->NameString);
         }
         catch (XivExportException ex)
         {
-            chatGui.PrintError("An error happened when trying to export this gear:\n" + ex.Message);
+            chatGui.PrintError("An error happened when trying to export this gear: " + ex.Message);
         }
     }
     

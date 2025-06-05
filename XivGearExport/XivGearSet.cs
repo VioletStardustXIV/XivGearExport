@@ -4,6 +4,7 @@ using System.Linq;
 using Dalamud.Game.Inventory;
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel;
 using Newtonsoft.Json;
@@ -23,6 +24,36 @@ namespace XivGearExport
         
         [JsonProperty("materia")]
         public IList<Materia>? Materia { get; set; }
+    }
+    
+    public class Weapon : Item
+    {
+        [JsonProperty("relicStats")]
+        public RelicStats? RelicStats { get; set; }
+    }
+    
+    public class RelicStats
+    {
+        [JsonProperty("dhit")]
+        public int? DirectHit { get; set; }
+        
+        [JsonProperty("crit")]
+        public int? Crit { get; set; }
+        
+        [JsonProperty("tenacity")]
+        public int? Tenacity { get; set; }
+        
+        [JsonProperty("determination")]
+        public int? Determination { get; set; }
+        
+        [JsonProperty("skillspeed")]
+        public int? SkillSpeed { get; set; }
+        
+        [JsonProperty("spellspeed")]
+        public int? SpellSpeed { get; set; }
+        
+        [JsonProperty("piety")]
+        public int? Piety { get; set; }
     }
 
     public class XivGearItems
@@ -183,16 +214,17 @@ namespace XivGearExport
 
                 if (item.InventorySlot == 0)
                 {
-                    items.Weapon = new Item
+                    items.Weapon = new Weapon
                     {
                         Id = itemId,
                         Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
+                        // TODO: If relic, add relic stats for main and offhand.
                     };
                 }
 
                 if (item.InventorySlot == 1)
                 {
-                    items.OffHand = new Item
+                    items.OffHand = new Weapon
                     {
                         Id = itemId,
                         Materia = []
@@ -298,14 +330,15 @@ namespace XivGearExport
             var items = new XivGearItems();
             
             var mainHand = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.MainHand);
-            items.Weapon = new Item
+            items.Weapon = new Weapon
             {
                 Id = ApplyHqOffset(mainHand.ItemId),
                 Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(mainHand, materiaSheet)),
+                // TODO: If relic, add relic stats for main and offhand.
             };
             
             var offHand = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.OffHand);
-            items.OffHand = new Item
+            items.OffHand = new Weapon
             {
                 Id = ApplyHqOffset(offHand.ItemId),
                 Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(offHand, materiaSheet)),

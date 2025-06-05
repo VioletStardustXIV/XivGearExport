@@ -14,18 +14,18 @@ namespace XivGearExport
         private const string XivGearImportSetPrefix = "https://xivgear.app/?page=importset%7C";
         private const string XivGearReadOnlySetPrefix = "https://xivgear.app/?page=sl%7C";
 
-        public void Export(XivGearItems items, PlayerInfo playerInfo, Configuration config)
+        public void Export(XivGearItems items, PlayerInfo playerInfo, Configuration config, string setName = "Exported Set")
         {
             var set = new XivGearSet
             {
                 Items = items,
-                Name = "Exported Set",
+                Name = setName,
             };
 
             var sheet = new XivGearSheet
             {
-                Name = "Exported Sheet",
-                Description = "Exported from the XivGearExporter plugin.",
+                Name = setName,
+                Description = "Exported from the XivGearExporter Dalamud plugin.",
                 Sets = [set],
                 Job = playerInfo.Job,
                 Level = playerInfo.Level,

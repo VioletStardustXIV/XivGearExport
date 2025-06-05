@@ -7,6 +7,8 @@ using Dalamud.Game.Inventory;
 using XivGearExport.Windows;
 using Lumina.Excel;
 using System;
+using Dalamud.Memory;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 namespace XivGearExport;
 
@@ -114,12 +116,6 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnExportCommand(string command, string args)
     {
-        var player = ClientState.LocalPlayer;
-        if (player == null)
-        {
-            ChatGui.PrintError("Something went wrong when creating xivgear.app set (player was null).");
-            return;
-        }
         var equippedItems = GameInventory.GetInventoryItems(GameInventoryType.EquippedItems);
         var isJob = HasSoulCrystalEquipped(equippedItems);
 
@@ -128,43 +124,37 @@ public sealed class Plugin : IDalamudPlugin
             ChatGui.PrintError("Cannot create xivgear.app set for non-job or non-combat job.");
             return;
         }
-
-        var jobRow = player.ClassJob.RowId;
-        var job = ClassJobs.GetRow(jobRow);
-
-        var jobAbbreviation = job.Abbreviation.ExtractText();
-
-        var playerCustomizeInfo = player.Customize;
-        var race = playerCustomizeInfo[(int)Dalamud.Game.ClientState.Objects.Enums.CustomizeIndex.Tribe];
-
-        // Note: feminine vs masculine here is for grammatical gender, in English it's the same
-        var raceName = Races.GetRowAt(race).Feminine.ExtractText();
-        raceName = XivGearSheet.ConvertRaceNameToXivGearRaceName(raceName);
-
-        var playerInfo = new PlayerInfo
-        {
-            Job = jobAbbreviation,
-            Race = raceName,
-            Level = 100,
-            PartyBonus = 5,
-        };
-
-        if (jobAbbreviation == "BLU")
-        {
-            playerInfo.Level = 80;
-            playerInfo.PartyBonus = 1;
-        }
-
-        var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia);
-
+        
         try
         {
-            Exporter.Export(items, playerInfo, Configuration);
+            var playerInfo = PlayerInfo.GetPlayerInfo(ClientState, ClassJobs, Races);
+            var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia);
+            var setName = GetCurrentGearsetName();
+
+            Exporter.Export(items, playerInfo, Configuration, setName);
         }
         catch (XivExportException ex)
         {
-            ChatGui.PrintError("An error happened when trying to export this gear:\n" + ex.Message);
+            ChatGui.PrintError("An error happened when trying to export this gear: " + ex.Message);
         }
+    }
+
+    private unsafe string GetCurrentGearsetName()
+    {
+        var module = RaptureGearsetModule.Instance();
+        var currentGearsetIndex = module->CurrentGearsetIndex;
+        if (!module->IsValidGearset(currentGearsetIndex))
+        {
+            return "Exported Set";
+        }
+
+        var gearset = module->GetGearset(currentGearsetIndex);
+        if (gearset == null)
+        {
+            return "Exported Set";
+        }
+
+        return gearset->NameString;
     }
 
     private void DrawUI() => WindowSystem.Draw();

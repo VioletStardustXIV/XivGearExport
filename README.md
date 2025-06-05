@@ -17,3 +17,4 @@ Supports:
 Limitations:
 - Will assume gearset is for level 100 character (or 80 for BLU), though this is easy to fix via Save As
 - Does not export food
+- Does not export relic stats for relic weapons with selectable stats
