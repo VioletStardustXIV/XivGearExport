@@ -17,14 +17,17 @@ public class ContextMenuHandler
     private Configuration configuration;
     private IClientState clientState;
     private Exporter exporter;
-    private ExcelSheet<Lumina.Excel.Sheets.Tribe> Races;
-    private ExcelSheet<Lumina.Excel.Sheets.Materia> Materia;
-    private ExcelSheet<Lumina.Excel.Sheets.ClassJob> ClassJobs;
+    private ExcelSheet<Lumina.Excel.Sheets.Tribe> racesSheet;
+    private ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet;
+    private ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobsSheet;
+    private ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet;
+    private ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet;
 
 
     public ContextMenuHandler(IDalamudPluginInterface pluginInterface, IChatGui chatGui, IContextMenu contextMenu, Configuration configuration, 
-        IClientState clientState, Exporter exporter, ExcelSheet<Lumina.Excel.Sheets.Tribe> races, ExcelSheet<Lumina.Excel.Sheets.Materia> materia,
-        ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobs)
+        IClientState clientState, Exporter exporter, ExcelSheet<Lumina.Excel.Sheets.Tribe> racesSheet, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet,
+        ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobsSheet, ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet,
+            ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet)
     {
         this.pluginInterface = pluginInterface;
         this.chatGui = chatGui;
@@ -32,9 +35,11 @@ public class ContextMenuHandler
         this.configuration = configuration;
         this.clientState = clientState;
         this.exporter = exporter;
-        this.Races = races;
-        this.Materia = materia;
-        this.ClassJobs = classJobs;
+        this.racesSheet = racesSheet;
+        this.materiaSheet = materiaSheet;
+        this.classJobsSheet = classJobsSheet;
+        this.mandervilleSheet = mandervilleSheet;
+        this.bozjaSheet = bozjaSheet;
 
         this.contextMenu.OnMenuOpened += OnOpenContextMenu;
     }
@@ -54,6 +59,18 @@ public class ContextMenuHandler
         });
     }
 
+    private string SoulstoneIdToJobAbbreviation(uint soulstoneId)
+    {
+        foreach (var classJob in classJobsSheet)
+        {
+            if (classJob.ItemSoulCrystal.RowId == soulstoneId)
+            {
+                return classJob.Abbreviation.ExtractText();
+            }
+        }
+        return "";
+    }
+    
     private unsafe void ExportGearSet (IMenuItemClickedArgs args)
     {
         if (args.Target is not MenuTargetDefault)
@@ -78,8 +95,11 @@ public class ContextMenuHandler
         
         try
         {
-            var playerInfo = PlayerInfo.GetPlayerInfo(clientState, ClassJobs, Races);
-            var gearItems = XivGearItems.CreateItemsFromGearset(gearset, Materia);
+            var playerInfo = PlayerInfo.GetPlayerInfo(clientState, classJobsSheet, racesSheet);
+            // For menu export, we need to get the job of the soulstone in the set, not the player's current job.
+            playerInfo.Job = SoulstoneIdToJobAbbreviation(soulStone.ItemId);
+            
+            var gearItems = XivGearItems.CreateItemsFromGearset(gearset, materiaSheet, mandervilleSheet, bozjaSheet);
             exporter.Export(gearItems, playerInfo, configuration, gearset->NameString);
         }
         catch (XivExportException ex)

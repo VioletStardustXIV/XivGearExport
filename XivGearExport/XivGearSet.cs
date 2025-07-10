@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.Inventory;
 using System.Collections.Immutable;
-using System.Text.Json.Serialization;
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel;
 using Newtonsoft.Json;
@@ -14,7 +12,7 @@ namespace XivGearExport
     public class Materia
     {
         [JsonProperty("id")]
-        public int id { get; set; }
+        public int Id { get; set; }
     }
 
     public class Item
@@ -35,25 +33,25 @@ namespace XivGearExport
     public class RelicStats
     {
         [JsonProperty("dhit")]
-        public int? DirectHit { get; set; }
+        public int DirectHit { get; set; }
         
         [JsonProperty("crit")]
-        public int? Crit { get; set; }
+        public int Crit { get; set; }
         
         [JsonProperty("tenacity")]
-        public int? Tenacity { get; set; }
+        public int Tenacity { get; set; }
         
         [JsonProperty("determination")]
-        public int? Determination { get; set; }
+        public int Determination { get; set; }
         
         [JsonProperty("skillspeed")]
-        public int? SkillSpeed { get; set; }
+        public int SkillSpeed { get; set; }
         
         [JsonProperty("spellspeed")]
-        public int? SpellSpeed { get; set; }
+        public int SpellSpeed { get; set; }
         
         [JsonProperty("piety")]
-        public int? Piety { get; set; }
+        public int Piety { get; set; }
     }
 
     public class XivGearItems
@@ -104,7 +102,7 @@ namespace XivGearExport
                 return 0;
             }
 
-            // row is materiaId (the type: crt, det, etc), column is materia grade (I, II, III, etc)
+            // For normal materia, row is materiaId (crit/det/etc), column is materia grade (I, XII, XI, etc)
             var materiaItem = materiaRow.Item[materiaGrade];
 
             return materiaItem.RowId;
@@ -184,7 +182,7 @@ namespace XivGearExport
         {
             return materia.Select(m => new Materia
             {
-                id = (int)m
+                Id = (int)m
             }).ToImmutableList();
         }
 
@@ -199,7 +197,10 @@ namespace XivGearExport
             return itemId;
         }
 
-        public static XivGearItems CreateItemsFromGameInventoryItems(ReadOnlySpan<GameInventoryItem> gameInventoryItems, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet)
+        public static XivGearItems CreateItemsFromGameInventoryItems(ReadOnlySpan<GameInventoryItem> gameInventoryItems, 
+            ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet, 
+            ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet,
+            ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet)
         {
             var items = new XivGearItems();
 
@@ -218,7 +219,7 @@ namespace XivGearExport
                     {
                         Id = itemId,
                         Materia = MapMateriaFromGameMateria(GetItemMateriaIds(item, materiaSheet)),
-                        // TODO: If relic, add relic stats for main and offhand.
+                        RelicStats = GetRelicStats(mandervilleSheet, bozjaSheet, materiaSheet, itemId, item.Materia, item.MateriaGrade)
                     };
                 }
 
@@ -227,7 +228,8 @@ namespace XivGearExport
                     items.OffHand = new Weapon
                     {
                         Id = itemId,
-                        Materia = []
+                        Materia = [],
+                        RelicStats = GetRelicStats(mandervilleSheet, bozjaSheet, materiaSheet, itemId, item.Materia, item.MateriaGrade)
                     };
                 }
 
@@ -325,7 +327,10 @@ namespace XivGearExport
             return items;
         }
         
-        public static unsafe XivGearItems CreateItemsFromGearset(RaptureGearsetModule.GearsetEntry* gearset, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet)
+        public static unsafe XivGearItems CreateItemsFromGearset(RaptureGearsetModule.GearsetEntry* gearset, 
+            ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet,
+            ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet,
+            ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet)
         {
             var items = new XivGearItems();
             
@@ -334,7 +339,7 @@ namespace XivGearExport
             {
                 Id = ApplyHqOffset(mainHand.ItemId),
                 Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(mainHand, materiaSheet)),
-                // TODO: If relic, add relic stats for main and offhand.
+                RelicStats = GetRelicStats(mandervilleSheet, bozjaSheet, materiaSheet, mainHand.ItemId, mainHand.Materia, mainHand.MateriaGrades),
             };
             
             var offHand = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.OffHand);
@@ -342,6 +347,7 @@ namespace XivGearExport
             {
                 Id = ApplyHqOffset(offHand.ItemId),
                 Materia = MapMateriaFromGameMateria(GetGearsetItemMateriaIds(offHand, materiaSheet)),
+                RelicStats = GetRelicStats(mandervilleSheet, bozjaSheet, materiaSheet, offHand.ItemId, offHand.Materia, offHand.MateriaGrades),
             };
             
             var head = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Head);
@@ -417,7 +423,147 @@ namespace XivGearExport
             
             return items;
         }
+
+        public static RelicStats GetRelicStats(ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet,
+            ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet, 
+            ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet, 
+            uint itemId, ReadOnlySpan<ushort> materia, ReadOnlySpan<byte> materiaGrades)
+        {
+            var mandervilleStats = GetMandervilleStats(mandervilleSheet, materiaSheet, itemId, materia, materiaGrades);
+            if (mandervilleStats != null)
+            {
+                return mandervilleStats;
+            }
+            
+            var bozjaStats = GetResistanceWeaponStats(bozjaSheet, materiaSheet, itemId, materia, materiaGrades);
+            if (bozjaStats != null)
+            {
+                return bozjaStats;
+            }
+            
+            return new RelicStats();
+        }
+        
+        public static RelicStats? GetMandervilleStats(ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet, 
+            ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet, 
+            uint itemId, ReadOnlySpan<ushort> materia, ReadOnlySpan<byte> materiaGrades) 
+        {
+            if (!mandervilleSheet.TryGetRow(itemId, out var mandervilleWeaponEnhanceRow))
+            {
+                // If the item id isn't in this sheet, it's not a Manderville relic.
+                return null;
+            }
+       
+            var stats = new RelicStats();
+        
+            // In theory there should only be three stats, but there's five
+            // materia slots.
+            for (var i = 0; i < 4; i++)
+            {
+                var materiaId = materia[i];
+                if (materiaId == 0)
+                {
+                    continue;
+                }
+
+                if (!materiaSheet.TryGetRow(materiaId, out var materiaRow))
+                {
+                    continue;
+                }
+
+                var valueIndex = materiaGrades[i];
+                var statValue = materiaRow.Value[valueIndex];
+
+                switch (materiaId)
+                {
+                    case 1403:
+                        stats.Crit = statValue;
+                        break;
+                    case 1404:
+                        stats.DirectHit = statValue;
+                        break;
+                    case 1405:
+                        stats.Determination = statValue;
+                        break;
+                    case 1406:
+                        stats.SkillSpeed = statValue;
+                        break;
+                    case 1407:
+                        stats.SpellSpeed = statValue;
+                        break;
+                    case 1408:
+                        stats.Tenacity = statValue;
+                        break;
+                    case 1409:
+                        stats.Piety = statValue;
+                        break;
+                }
+            }
+
+            return stats;
+        }
+        
+         public static RelicStats? GetResistanceWeaponStats(ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet, 
+             ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet, 
+             uint itemId, ReadOnlySpan<ushort> materia, ReadOnlySpan<byte> materiaGrades) 
+        {
+            if (!bozjaSheet.TryGetRow(itemId, out var resistanceWeaponAdjustRow))
+            {
+                // If the item id isn't in this sheet, it's not a Bozja relic.
+                return null;
+            }
+       
+            var stats = new RelicStats();
+        
+            // In theory there should only be three stats, but there's five
+            // materia slots.
+            for (var i = 0; i < 4; i++)
+            {
+                var materiaId = materia[i];
+                if (materiaId == 0)
+                {
+                    continue;
+                }
+
+                if (!materiaSheet.TryGetRow(materiaId, out var materiaRow))
+                {
+                    continue;
+                }
+                
+                var valueIndex = materiaGrades[i];
+                var statValue = materiaRow.Value[valueIndex];
+                var affectedStatId = materiaRow.BaseParam.RowId;
+                switch (affectedStatId)
+                {
+                    case 19:
+                        stats.Tenacity = statValue;
+                        break;
+                    case 27:
+                        stats.Crit = statValue;
+                        break;
+                    case 44:
+                        stats.Determination = statValue;
+                        break;
+                    case 22:
+                        stats.DirectHit = statValue;
+                        break;
+                    case 45:
+                        stats.SkillSpeed = statValue;
+                        break;
+                    case 46:
+                        stats.SpellSpeed = statValue;
+                        break;
+                    case 6:
+                        stats.Piety = statValue;
+                        break;
+                }
+            }
+
+            return stats;
+        }
     }
+    
+    
 
     internal class XivGearSet
     {

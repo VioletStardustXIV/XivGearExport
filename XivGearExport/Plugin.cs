@@ -9,6 +9,7 @@ using Lumina.Excel;
 using System;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using Lumina.Extensions;
 
 namespace XivGearExport;
 
@@ -33,7 +34,11 @@ public sealed class Plugin : IDalamudPlugin
     public readonly WindowSystem WindowSystem = new("XivGearExport");
     private ConfigWindow ConfigWindow { get; init; }
 
+    private ExcelSheet<Lumina.Excel.Sheets.Item> Items { get; init; }
+    private ExcelSheet<Lumina.Excel.Sheets.MateriaGrade> MateriaGrades { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.Materia> Materia { get; init; }
+    private ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> MandervilleWeaponEnhance { get; init; }
+    private ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> ResistanceWeaponAdjust { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.ClassJob> ClassJobs { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.Tribe> Races { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.ClassJobCategory> ClassJobCategories { get; init; }
@@ -45,11 +50,15 @@ public sealed class Plugin : IDalamudPlugin
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         
+        Items = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.Item>() ?? throw new InvalidOperationException("Item sheet not found");
         Materia = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.Materia>() ?? throw new InvalidOperationException("Materia sheet not found");
+        MateriaGrades = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.MateriaGrade>() ?? throw new InvalidOperationException("MateriaGrade sheet not found");
+        ResistanceWeaponAdjust = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust>() ?? throw new InvalidOperationException("ResistanceWeaponAdjust sheet not found");
+        MandervilleWeaponEnhance = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance>() ?? throw new InvalidOperationException("MandervilleWeaponEnhance sheet not found");
         ClassJobs = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.ClassJob>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("ClassJobs sheet not found");
         ClassJobCategories = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.ClassJobCategory>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("ClassJobCategory sheet not found");
         Races = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.Tribe>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("Tribes sheet not found");
-
+        
         ConfigWindow = new ConfigWindow(this);
 
         WindowSystem.AddWindow(ConfigWindow);
@@ -84,7 +93,7 @@ public sealed class Plugin : IDalamudPlugin
         var client = new System.Net.Http.HttpClient();
         Exporter = new Exporter(client, Log, ChatGui);
 
-        ContextMenuHandler = new ContextMenuHandler(PluginInterface, ChatGui, ContextMenu, Configuration, ClientState, Exporter, Races, Materia, ClassJobs);
+        ContextMenuHandler = new ContextMenuHandler(PluginInterface, ChatGui, ContextMenu, Configuration, ClientState, Exporter, Races, Materia, ClassJobs, MandervilleWeaponEnhance, ResistanceWeaponAdjust);
     }
 
     public void Dispose()
@@ -128,7 +137,7 @@ public sealed class Plugin : IDalamudPlugin
         try
         {
             var playerInfo = PlayerInfo.GetPlayerInfo(ClientState, ClassJobs, Races);
-            var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia);
+            var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia, MandervilleWeaponEnhance, ResistanceWeaponAdjust);
             var setName = GetCurrentGearsetName();
 
             Exporter.Export(items, playerInfo, Configuration, setName);

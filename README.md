@@ -7,6 +7,7 @@ A simple Dalamud plugin to export your in-game gearsets to xivgear.app.
 Use `/xivgearexport` (or `/xge`) to export your gear set, and `/xivgearexportconfig` (or `/xgeconfig`, or the config button) to configure the plugin.
 
 Supports:
+- Endwalker and Shadowbringers relic weapons with selectable stats fully supported
 - Export to edit mode
 - Export to view only mode
 - Optionally opening in browser
@@ -17,4 +18,3 @@ Supports:
 Limitations:
 - Will assume gearset is for level 100 character (or 80 for BLU), though this is easy to fix via Save As
 - Does not export food
-- Does not export relic stats for relic weapons with selectable stats
