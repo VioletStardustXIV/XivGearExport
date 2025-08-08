@@ -87,7 +87,7 @@ public class ContextMenuHandler
         var pointer = (AgentGearSet*)args.AgentPtr;
         var gearset = pointer->UIModuleInterface->GetRaptureGearsetModule()->GetGearset((int)gearSetId);
         var soulStone = gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.SoulStone);
-        if (soulStone.ItemId == 0)
+        if (soulStone.ItemId == 0 || PlayerInfo.IsDoHSoulstone(soulStone.ItemId))
         {
             chatGui.PrintError("Cannot create xivgear.app set for non-job or non-combat job.");
             return;

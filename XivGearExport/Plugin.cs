@@ -111,11 +111,11 @@ public sealed class Plugin : IDalamudPlugin
         ToggleConfigUI();
     }
 
-    private static bool HasSoulCrystalEquipped(ReadOnlySpan<GameInventoryItem> items)
+    private static bool HasCombatJobSoulCrystalEquipped(ReadOnlySpan<GameInventoryItem> items)
     {
         foreach (var item in items)
         {
-            if (item.InventorySlot == 13 &&  item.ItemId != 0)
+            if (item.InventorySlot == 13 && item.ItemId != 0 && !PlayerInfo.IsDoHSoulstone(item.ItemId))
             {
                 return true;
             }
@@ -126,7 +126,7 @@ public sealed class Plugin : IDalamudPlugin
     private void OnExportCommand(string command, string args)
     {
         var equippedItems = GameInventory.GetInventoryItems(GameInventoryType.EquippedItems);
-        var isJob = HasSoulCrystalEquipped(equippedItems);
+        var isJob = HasCombatJobSoulCrystalEquipped(equippedItems);
 
         if (!isJob)
         {
