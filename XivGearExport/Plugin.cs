@@ -7,9 +7,7 @@ using Dalamud.Game.Inventory;
 using XivGearExport.Windows;
 using Lumina.Excel;
 using System;
-using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Lumina.Extensions;
 
 namespace XivGearExport;
 
@@ -17,7 +15,7 @@ public sealed class Plugin : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
-    [PluginService] internal static IClientState ClientState { get; private set; } = null!;
+    [PluginService] internal static IPlayerState PlayerState { get; private set; } = null!;
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static IGameInventory GameInventory { get; private set; } = null!;
@@ -92,8 +90,9 @@ public sealed class Plugin : IDalamudPlugin
 
         var client = new System.Net.Http.HttpClient();
         Exporter = new Exporter(client, Log, ChatGui);
+        
 
-        ContextMenuHandler = new ContextMenuHandler(PluginInterface, ChatGui, ContextMenu, Configuration, ClientState, Exporter, Races, Materia, ClassJobs, MandervilleWeaponEnhance, ResistanceWeaponAdjust);
+        ContextMenuHandler = new ContextMenuHandler(PluginInterface, ChatGui, ContextMenu, Configuration, PlayerState, Exporter, Races, Materia, ClassJobs, MandervilleWeaponEnhance, ResistanceWeaponAdjust);
     }
 
     public void Dispose()
@@ -136,7 +135,7 @@ public sealed class Plugin : IDalamudPlugin
         
         try
         {
-            var playerInfo = PlayerInfo.GetPlayerInfo(ClientState, ClassJobs, Races);
+            var playerInfo = PlayerInfo.GetPlayerInfo(PlayerState, ClassJobs, Races);
             var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia, MandervilleWeaponEnhance, ResistanceWeaponAdjust);
             var setName = GetCurrentGearsetName();
 

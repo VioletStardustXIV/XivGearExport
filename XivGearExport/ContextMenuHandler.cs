@@ -15,7 +15,7 @@ public class ContextMenuHandler
     private IChatGui chatGui;
     private IContextMenu contextMenu;
     private Configuration configuration;
-    private IClientState clientState;
+    private IPlayerState playerState;
     private Exporter exporter;
     private ExcelSheet<Lumina.Excel.Sheets.Tribe> racesSheet;
     private ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet;
@@ -25,7 +25,7 @@ public class ContextMenuHandler
 
 
     public ContextMenuHandler(IDalamudPluginInterface pluginInterface, IChatGui chatGui, IContextMenu contextMenu, Configuration configuration, 
-        IClientState clientState, Exporter exporter, ExcelSheet<Lumina.Excel.Sheets.Tribe> racesSheet, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet,
+        IPlayerState playerState, Exporter exporter, ExcelSheet<Lumina.Excel.Sheets.Tribe> racesSheet, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet,
         ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobsSheet, ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet,
             ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet)
     {
@@ -33,7 +33,7 @@ public class ContextMenuHandler
         this.chatGui = chatGui;
         this.contextMenu = contextMenu;
         this.configuration = configuration;
-        this.clientState = clientState;
+        this.playerState = playerState;
         this.exporter = exporter;
         this.racesSheet = racesSheet;
         this.materiaSheet = materiaSheet;
@@ -95,7 +95,7 @@ public class ContextMenuHandler
         
         try
         {
-            var playerInfo = PlayerInfo.GetPlayerInfo(clientState, classJobsSheet, racesSheet);
+            var playerInfo = PlayerInfo.GetPlayerInfo(playerState, classJobsSheet, racesSheet);
             // For menu export, we need to get the job of the soulstone in the set, not the player's current job.
             playerInfo.Job = SoulstoneIdToJobAbbreviation(soulStone.ItemId);
             

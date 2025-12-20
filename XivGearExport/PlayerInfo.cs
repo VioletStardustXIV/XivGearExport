@@ -11,29 +11,22 @@ namespace XivGearExport
         
         public int PartyBonus { get; set; } = 5;
         
-        public static PlayerInfo GetPlayerInfo(IClientState clientState, ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobs, ExcelSheet<Lumina.Excel.Sheets.Tribe> races)
+        public static PlayerInfo GetPlayerInfo(IPlayerState playerState, ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobs, ExcelSheet<Lumina.Excel.Sheets.Tribe> races)
         {
-            var player = clientState.LocalPlayer;
-            if (player == null)
+            if (playerState == null)
             {
                 throw new XivExportException("player was null, cannot get player info");
             }
             
-            var jobRow = player.ClassJob.RowId;
+            var jobRow = playerState.ClassJob.RowId;
             var job = classJobs.GetRow(jobRow);
             var jobAbbreviation = job.Abbreviation.ExtractText();
-
-            var playerCustomizeInfo = player.Customize;
-            var race = playerCustomizeInfo[(int)Dalamud.Game.ClientState.Objects.Enums.CustomizeIndex.Tribe];
-
-            // Note: feminine vs masculine here is for grammatical gender, in English it's the same
-            var raceName = races.GetRowAt(race).Feminine.ExtractText();
-            raceName = XivGearSheet.ConvertRaceNameToXivGearRaceName(raceName);
+            var raceName = races[playerState.Tribe.RowId].Feminine.ExtractText();
 
             var playerInfo = new PlayerInfo
             {
                 Job = jobAbbreviation,
-                Race = raceName,
+                Race = XivGearSheet.ConvertRaceNameToXivGearRaceName(raceName),
                 Level = 100,
                 PartyBonus = 5,
             };
