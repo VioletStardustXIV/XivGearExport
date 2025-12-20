@@ -38,7 +38,7 @@ public sealed class Plugin : IDalamudPlugin
     private ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> MandervilleWeaponEnhance { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> ResistanceWeaponAdjust { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.ClassJob> ClassJobs { get; init; }
-    private ExcelSheet<Lumina.Excel.Sheets.Tribe> Races { get; init; }
+    private ExcelSheet<Lumina.Excel.Sheets.Tribe> Tribes { get; init; }
     private ExcelSheet<Lumina.Excel.Sheets.ClassJobCategory> ClassJobCategories { get; init; }
     private Exporter Exporter { get; set; }
     
@@ -55,7 +55,7 @@ public sealed class Plugin : IDalamudPlugin
         MandervilleWeaponEnhance = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance>() ?? throw new InvalidOperationException("MandervilleWeaponEnhance sheet not found");
         ClassJobs = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.ClassJob>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("ClassJobs sheet not found");
         ClassJobCategories = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.ClassJobCategory>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("ClassJobCategory sheet not found");
-        Races = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.Tribe>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("Tribes sheet not found");
+        Tribes = DataManager.Excel.GetSheet<Lumina.Excel.Sheets.Tribe>(language: Lumina.Data.Language.English) ?? throw new InvalidOperationException("Tribes sheet not found");
         
         ConfigWindow = new ConfigWindow(this);
 
@@ -92,7 +92,7 @@ public sealed class Plugin : IDalamudPlugin
         Exporter = new Exporter(client, Log, ChatGui);
         
 
-        ContextMenuHandler = new ContextMenuHandler(PluginInterface, ChatGui, ContextMenu, Configuration, PlayerState, Exporter, Races, Materia, ClassJobs, MandervilleWeaponEnhance, ResistanceWeaponAdjust);
+        ContextMenuHandler = new ContextMenuHandler(PluginInterface, ChatGui, ContextMenu, Configuration, PlayerState, Exporter, Tribes, Materia, ClassJobs, MandervilleWeaponEnhance, ResistanceWeaponAdjust);
     }
 
     public void Dispose()
@@ -135,7 +135,7 @@ public sealed class Plugin : IDalamudPlugin
         
         try
         {
-            var playerInfo = PlayerInfo.GetPlayerInfo(PlayerState, ClassJobs, Races);
+            var playerInfo = PlayerInfo.GetPlayerInfo(PlayerState, ClassJobs, Tribes);
             var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia, MandervilleWeaponEnhance, ResistanceWeaponAdjust);
             var setName = GetCurrentGearsetName();
 

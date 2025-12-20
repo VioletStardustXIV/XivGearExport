@@ -17,7 +17,7 @@ public class ContextMenuHandler
     private Configuration configuration;
     private IPlayerState playerState;
     private Exporter exporter;
-    private ExcelSheet<Lumina.Excel.Sheets.Tribe> racesSheet;
+    private ExcelSheet<Lumina.Excel.Sheets.Tribe> tribesSheet;
     private ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet;
     private ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobsSheet;
     private ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet;
@@ -25,7 +25,7 @@ public class ContextMenuHandler
 
 
     public ContextMenuHandler(IDalamudPluginInterface pluginInterface, IChatGui chatGui, IContextMenu contextMenu, Configuration configuration, 
-        IPlayerState playerState, Exporter exporter, ExcelSheet<Lumina.Excel.Sheets.Tribe> racesSheet, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet,
+        IPlayerState playerState, Exporter exporter, ExcelSheet<Lumina.Excel.Sheets.Tribe> tribesSheet, ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet,
         ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobsSheet, ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet,
             ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet)
     {
@@ -35,7 +35,7 @@ public class ContextMenuHandler
         this.configuration = configuration;
         this.playerState = playerState;
         this.exporter = exporter;
-        this.racesSheet = racesSheet;
+        this.tribesSheet = tribesSheet;
         this.materiaSheet = materiaSheet;
         this.classJobsSheet = classJobsSheet;
         this.mandervilleSheet = mandervilleSheet;
@@ -95,7 +95,7 @@ public class ContextMenuHandler
         
         try
         {
-            var playerInfo = PlayerInfo.GetPlayerInfo(playerState, classJobsSheet, racesSheet);
+            var playerInfo = PlayerInfo.GetPlayerInfo(playerState, classJobsSheet, tribesSheet);
             // For menu export, we need to get the job of the soulstone in the set, not the player's current job.
             playerInfo.Job = SoulstoneIdToJobAbbreviation(soulStone.ItemId);
             

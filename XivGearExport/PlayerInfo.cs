@@ -11,7 +11,7 @@ namespace XivGearExport
         
         public int PartyBonus { get; set; } = 5;
         
-        public static PlayerInfo GetPlayerInfo(IPlayerState playerState, ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobs, ExcelSheet<Lumina.Excel.Sheets.Tribe> races)
+        public static PlayerInfo GetPlayerInfo(IPlayerState playerState, ExcelSheet<Lumina.Excel.Sheets.ClassJob> classJobs, ExcelSheet<Lumina.Excel.Sheets.Tribe> tribes)
         {
             if (playerState == null)
             {
@@ -21,7 +21,8 @@ namespace XivGearExport
             var jobRow = playerState.ClassJob.RowId;
             var job = classJobs.GetRow(jobRow);
             var jobAbbreviation = job.Abbreviation.ExtractText();
-            var raceName = races[playerState.Tribe.RowId].Feminine.ExtractText();
+            // Note: feminine vs masculine here is for grammatical gender, in English it's the same
+            var raceName = tribes[playerState.Tribe.RowId].Feminine.ExtractText();
 
             var playerInfo = new PlayerInfo
             {
