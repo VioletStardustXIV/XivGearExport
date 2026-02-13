@@ -61,22 +61,22 @@ public sealed class Plugin : IDalamudPlugin
 
         WindowSystem.AddWindow(ConfigWindow);
 
-        CommandManager.AddHandler(ConfigCommandName, new CommandInfo(OnConfigCommand)
+        CommandManager.AddHandler(ConfigShortCommandName, new CommandInfo(OnConfigCommand)
         {
-            HelpMessage = "Type /xivgearexportconfig or /xgeconfig to change the config."
+            HelpMessage = "Type /xgeconfig or /xivgearexportconfig to change the config."
         });
         
-        CommandManager.AddHandler(ConfigShortCommandName, new CommandInfo(OnConfigCommand)
+        CommandManager.AddHandler(ConfigCommandName, new CommandInfo(OnConfigCommand)
         {
             ShowInHelp = false
         });
         
-        CommandManager.AddHandler(ExportCommandName, new CommandInfo(OnExportCommand)
+        CommandManager.AddHandler(ExportShortCommandName, new CommandInfo(OnExportCommand)
         {
-            HelpMessage = "Type /xivgearexport or /xge to export your gearset to xivgear.app."
+            HelpMessage = "Type /xge or /xivgearexport to export your gearset to xivgear.app."
         });
         
-        CommandManager.AddHandler(ExportShortCommandName, new CommandInfo(OnExportCommand)
+        CommandManager.AddHandler(ExportCommandName, new CommandInfo(OnExportCommand)
         {
             ShowInHelp = false
         });
