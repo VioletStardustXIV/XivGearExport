@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.Inventory;
 using System.Collections.Immutable;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel;
 using Newtonsoft.Json;
@@ -200,7 +201,8 @@ namespace XivGearExport
         public static XivGearItems CreateItemsFromGameInventoryItems(ReadOnlySpan<GameInventoryItem> gameInventoryItems, 
             ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet, 
             ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet,
-            ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet)
+            ExcelSheet<Lumina.Excel.Sheets.ResistanceWeaponAdjust> bozjaSheet,
+            IChatGui ChatGui)
         {
             var items = new XivGearItems();
 
@@ -429,6 +431,12 @@ namespace XivGearExport
             ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet, 
             uint itemId, ReadOnlySpan<ushort> materia, ReadOnlySpan<byte> materiaGrades)
         {
+            var phantomWeaponStats = GetPhantomWeaponStats(materiaSheet, itemId, materia, materiaGrades);
+            if (phantomWeaponStats != null) 
+            { 
+                return phantomWeaponStats;
+            }
+                
             var mandervilleStats = GetMandervilleStats(mandervilleSheet, materiaSheet, itemId, materia, materiaGrades);
             if (mandervilleStats != null)
             {
@@ -442,6 +450,71 @@ namespace XivGearExport
             }
             
             return new RelicStats();
+        }
+
+
+        private static Boolean IsPhantomWeapon(uint itemId)
+        {
+            // All of the Phantom [name] Occultum weapons, including Paladin shield.
+            return itemId >= 51000 && itemId <= 51021;
+        }
+        
+         public static RelicStats? GetPhantomWeaponStats(ExcelSheet<Lumina.Excel.Sheets.Materia> materiaSheet, 
+            uint itemId, ReadOnlySpan<ushort> materia, ReadOnlySpan<byte> materiaGrades) 
+        {
+            if (!IsPhantomWeapon(itemId))
+            {
+                return null;
+            }
+            
+            var stats = new RelicStats();
+        
+            // In theory there should only be three stats, but there's five
+            // materia slots.
+            for (var i = 0; i < 4; i++)
+            {
+                var materiaId = materia[i];
+                if (materiaId == 0)
+                {
+                    continue;
+                }
+
+                if (!materiaSheet.TryGetRow(materiaId, out var materiaRow))
+                {
+                    continue;
+                }
+
+                var valueIndex = materiaGrades[i];
+                var statValue = materiaRow.Value[valueIndex];
+                
+                switch (materiaId)
+                {
+                    // These materia IDs are the same as Manderville, but +7
+                    case 1410:
+                        stats.Crit = statValue;
+                        break;
+                    case 1411:
+                        stats.DirectHit = statValue;
+                        break;
+                    case 1412:
+                        stats.Determination = statValue;
+                        break;
+                    case 1413:
+                        stats.SkillSpeed = statValue;
+                        break;
+                    case 1414:
+                        stats.SpellSpeed = statValue;
+                        break;
+                    case 1415:
+                        stats.Tenacity = statValue;
+                        break;
+                    case 1416:
+                        stats.Piety = statValue;
+                        break;
+                }
+            }
+
+            return stats;
         }
         
         public static RelicStats? GetMandervilleStats(ExcelSheet<Lumina.Excel.Sheets.MandervilleWeaponEnhance> mandervilleSheet, 

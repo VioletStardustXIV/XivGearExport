@@ -136,7 +136,7 @@ public sealed class Plugin : IDalamudPlugin
         try
         {
             var playerInfo = PlayerInfo.GetPlayerInfo(PlayerState, ClassJobs, Tribes);
-            var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia, MandervilleWeaponEnhance, ResistanceWeaponAdjust);
+            var items = XivGearItems.CreateItemsFromGameInventoryItems(equippedItems, Materia, MandervilleWeaponEnhance, ResistanceWeaponAdjust, ChatGui);
             var setName = GetCurrentGearsetName();
 
             Exporter.Export(items, playerInfo, Configuration, setName);

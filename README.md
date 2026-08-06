@@ -13,7 +13,7 @@ Supports:
 - Optionally can write the URL in chat
 - Default sims in xivgear.app are included in the export
 - Right-click menu export for character gearset list
-- Endwalker and Shadowbringers relic weapons with selectable stats fully supported
+- Dawntrail, Endwalker and Shadowbringers relic weapons with selectable stats fully supported
 
 Limitations:
 - Will assume gearset is for level 100 character (or 80 for BLU), though this is easy to fix via Save As
