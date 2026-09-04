@@ -11,8 +11,8 @@ namespace XivGearExport
     public class Exporter(HttpClient httpClient, IPluginLog log, IChatGui chatGui)
     {
         private const string XivgearApiBase = "https://api.xivgear.app/shortlink/";
-        private const string XivGearImportSetPrefix = "https://xivgear.app/?page=importset%7C";
-        private const string XivGearReadOnlySetPrefix = "https://xivgear.app/?page=sl%7C";
+        private const string XivGearImportSetPrefix = "https://xivgear.app/#/nore/importset/";
+        private const string XivGearReadOnlySetPrefix = "https://xivgear.app/sl/";
 
         public void Export(XivGearItems items, PlayerInfo playerInfo, Configuration config, string setName = "Exported Set")
         {
@@ -78,6 +78,12 @@ namespace XivGearExport
             }
         }
 
+        // EncodeSpeechMarks encodes speech marks, making them work with `Util.OpenLink`
+        private static string EncodeSpeechMarks( string stringToUpdate)
+        {
+            return stringToUpdate.Replace("\"", "%22");
+        }
+
         private void ExportToXivGearEditMode(XivGearSheet sheet, bool openLink, bool printUrl)
         {
             try
@@ -85,14 +91,19 @@ namespace XivGearExport
                 var serialized = Newtonsoft.Json.JsonConvert.SerializeObject(sheet);
                 log.Info(serialized);
 
-                var urlEncodedSheet = HttpUtility.UrlEncode(serialized);
-
-                var urlToOpen = XivGearImportSetPrefix + urlEncodedSheet;
+                // Note: technically this does not actually produce a compliant URL. In particular, it will leave
+                // e.g. `{` unencoded. However, this makes the URLs significantly more readable than the alternative
+                // i.e. using Uri.EscapeDataString(serialized);
+                // This does seem to work for every real browser that I tried, so I don't really see the harm in this.
+                // That being said, I think a better approach here is using a base64 endpoint, but that would need to
+                // be implemented first. I'll get back to this when there is such an endpoint.
+                var urlToOpen = XivGearImportSetPrefix + EncodeSpeechMarks(HttpUtility.UrlPathEncode(serialized));
+                
                 if (openLink)
                 {
                     Util.OpenLink(urlToOpen);
                 }
-
+                
                 if (printUrl)
                 {
                     chatGui.Print(urlToOpen);
